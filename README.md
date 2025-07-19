@@ -32,8 +32,8 @@
 
 1. **저장소 클론**
 ```bash
-git clone https://github.com/your-username/rslot.git
-cd rslot
+git clone https://github.com/flexx84/slot_y.git
+cd slot_y
 ```
 
 2. **가상환경 생성 및 활성화**
@@ -74,7 +74,7 @@ http://localhost:8000
 
 ### GitHub Codespaces 사용
 
-1. **GitHub 저장소로 이동**
+1. **GitHub 저장소로 이동**: https://github.com/flexx84/slot_y
 2. **Code 버튼 클릭** → **Codespaces 탭**
 3. **Create codespace on main 클릭**
 4. **터미널에서 실행**:
@@ -91,7 +91,7 @@ python manage.py runserver 0.0.0.0:8000
 ## 📁 프로젝트 구조
 
 ```
-rslot/
+slot_y/
 ├── slots/                    # 메인 앱
 │   ├── models.py            # 데이터 모델
 │   ├── views.py             # 뷰 함수
@@ -137,4 +137,4 @@ DATABASE_URL=sqlite:///db.sqlite3
 
 ## 📞 문의
 
-프로젝트에 대한 문의사항이 있으시면 이슈를 생성해주세요. 
+프로젝트에 대한 문의사항이 있으시면 이슈를 생성해주세요.

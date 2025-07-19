@@ -90,11 +90,11 @@ if DATABASE_URL and 'postgresql://' in DATABASE_URL:
     }
     print(f"✅ PostgreSQL 데이터베이스 연결: {url.hostname}:{url.port}")
 else:
-    # 로컬 SQLite 설정
+    # Railway에서 SQLite 사용 (영구 저장)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': '/app/db.sqlite3',  # 절대 경로로 변경
         }
     }
     print(f"⚠️ SQLite 데이터베이스 사용 (DATABASE_URL: {DATABASE_URL})")

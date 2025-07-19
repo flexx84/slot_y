@@ -74,8 +74,8 @@ from urllib.parse import urlparse
 # Railway 환경변수 확인
 DATABASE_URL = os.getenv('DATABASE_URL')
 
-# Railway 환경에서 PostgreSQL 사용
-if DATABASE_URL:
+# Railway 환경에서 강제로 PostgreSQL 사용
+if DATABASE_URL and 'postgresql://' in DATABASE_URL:
     # Railway PostgreSQL 설정
     url = urlparse(DATABASE_URL)
     DATABASES = {
@@ -88,14 +88,16 @@ if DATABASE_URL:
             'PORT': url.port or '5432',
         }
     }
+    print(f"✅ PostgreSQL 데이터베이스 연결: {url.hostname}:{url.port}")
 else:
-    # 로컬 SQLite 설정 (Railway에서도 임시로 사용)
+    # 로컬 SQLite 설정
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+    print(f"⚠️ SQLite 데이터베이스 사용 (DATABASE_URL: {DATABASE_URL})")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

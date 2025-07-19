@@ -9,6 +9,6 @@
     "restartPolicyMaxRetries": 10
   },
   "scripts": {
-    "postinstall": "python manage.py migrate && python manage.py collectstatic --noinput"
+    "postinstall": "python manage.py makemigrations && python manage.py migrate && python create_admin.py && python manage.py collectstatic --noinput"
   }
 } 

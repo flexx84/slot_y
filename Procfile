@@ -1,1 +1,1 @@
-web: gunicorn rslot.wsgi --log-file - 
+web: python manage.py migrate && python create_admin.py && gunicorn rslot.wsgi --log-file - 

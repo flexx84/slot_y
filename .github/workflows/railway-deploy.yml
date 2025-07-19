@@ -19,6 +19,16 @@ jobs:
     - name: Install Railway CLI
       run: npm install -g @railway/cli
     
+    - name: Run migrations
+      run: railway run python manage.py migrate
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    
+    - name: Create superuser
+      run: railway run python manage.py createsuperuser --noinput --username admin --email admin@example.com
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    
     - name: Deploy to Railway
       run: railway up
       env:

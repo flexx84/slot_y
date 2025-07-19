@@ -10,7 +10,7 @@ class Slot(models.Model):
     keyword = models.CharField(max_length=255)
     url = models.URLField(max_length=500)
     start_date = models.DateTimeField(default=timezone.now)
-    end_date = models.DateTimeField()
+    end_date = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

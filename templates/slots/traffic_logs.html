@@ -1,0 +1,470 @@
+{% extends 'base.html' %}
+
+{% block title %}트래픽 로그 모니터링 - R슬롯{% endblock %}
+
+{% block page_title %}트래픽 로그 모니터링{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- 실시간 새로고침 컨트롤 -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100 mb-6">
+        <div class="p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-sync-alt text-blue-500 mr-2"></i>실시간 모니터링
+                    </h3>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="autoRefresh" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <label for="autoRefresh" class="text-sm font-medium text-gray-700">자동 새로고침</label>
+                    </div>
+                    <select id="refreshInterval" class="text-sm border border-gray-300 rounded px-2 py-1">
+                        <option value="5">5초</option>
+                        <option value="10" selected>10초</option>
+                        <option value="30">30초</option>
+                        <option value="60">1분</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span id="lastUpdate" class="text-sm text-gray-500">마지막 업데이트: -</span>
+                    <button id="manualRefresh" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-sync-alt mr-1"></i>새로고침
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 통계 카드 -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-list text-blue-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-medium text-blue-600">전체 로그</h3>
+                    <p class="text-2xl font-bold text-blue-900">{{ total_logs }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-medium text-green-600">성공</h3>
+                    <p class="text-2xl font-bold text-green-900">{{ success_logs }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-times-circle text-red-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-medium text-red-600">실패</h3>
+                    <p class="text-2xl font-bold text-red-900">{{ failed_logs }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-clock text-yellow-600 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-medium text-yellow-600">대기중</h3>
+                    <p class="text-2xl font-bold text-yellow-900">{{ pending_logs }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 필터 영역 -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100 mb-6">
+        <div class="border-b border-gray-100 p-4">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-filter text-indigo-500 mr-2"></i>필터
+            </h2>
+            
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">상태</label>
+                    <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">전체</option>
+                        <option value="success" {% if status_filter == 'success' %}selected{% endif %}>성공</option>
+                        <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>실패</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>대기중</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">트래픽 타입</label>
+                    <select name="traffic_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">전체</option>
+                        <option value="basic" {% if traffic_type_filter == 'basic' %}selected{% endif %}>기본 백링크</option>
+                        <option value="multi_hop" {% if traffic_type_filter == 'multi_hop' %}selected{% endif %}>다단계 우회</option>
+                        <option value="scheduled" {% if traffic_type_filter == 'scheduled' %}selected{% endif %}>스케줄 백링크</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">사용자</label>
+                    <input type="text" name="user" value="{{ user_filter }}" placeholder="사용자명 검색" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                
+                <div class="flex items-end">
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                        <i class="fas fa-search mr-1"></i>필터 적용
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 로그 테이블 -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100">
+        <div class="border-b border-gray-100 p-4">
+            <h2 class="text-lg font-semibold text-gray-800">
+                <i class="fas fa-chart-line text-indigo-500 mr-2"></i>트래픽 로그
+            </h2>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            시간
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            사용자
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            키워드
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            트래픽 타입
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            상태
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            중간 사이트
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            소요 시간
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            실시간 상태
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            상세 정보
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% if page_obj %}
+                        {% for log in page_obj %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ log.created_at|date:"Y-m-d H:i:s" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ log.slot.user.username }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ log.slot.keyword }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ log.get_traffic_type_display }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if log.status == 'success' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check-circle mr-1"></i>성공
+                                    </span>
+                                {% elif log.status == 'failed' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <i class="fas fa-times-circle mr-1"></i>실패
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        <i class="fas fa-clock mr-1"></i>대기중
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                {% if log.intermediate_site_category %}
+                                    <div>
+                                        <div class="font-medium">
+                                            {% if log.intermediate_site_category == '검색 성공' %}
+                                                <span class="text-blue-600"><i class="fas fa-search mr-1"></i>검색 완료</span>
+                                            {% elif log.intermediate_site_category == '중간사이트 방문' %}
+                                                <span class="text-green-600"><i class="fas fa-external-link-alt mr-1"></i>중간사이트 방문</span>
+                                            {% elif log.intermediate_site_category == '중간사이트 체류' %}
+                                                <span class="text-yellow-600"><i class="fas fa-clock mr-1"></i>중간사이트 체류</span>
+                                            {% elif log.intermediate_site_category == '타겟 방문 성공' %}
+                                                <span class="text-purple-600"><i class="fas fa-check-circle mr-1"></i>타겟 방문 성공</span>
+                                            {% elif log.intermediate_site_category == '타겟 방문 실패' %}
+                                                <span class="text-red-600"><i class="fas fa-times-circle mr-1"></i>타겟 방문 실패</span>
+                                            {% elif log.intermediate_site_category == '검색 실패' %}
+                                                <span class="text-red-600"><i class="fas fa-times-circle mr-1"></i>검색 실패</span>
+                                            {% elif log.intermediate_site_category == '중간사이트 실패' %}
+                                                <span class="text-red-600"><i class="fas fa-times-circle mr-1"></i>중간사이트 실패</span>
+                                            {% elif log.intermediate_site_category == '오류 발생' %}
+                                                <span class="text-red-600"><i class="fas fa-exclamation-triangle mr-1"></i>오류 발생</span>
+                                            {% else %}
+                                                {{ log.intermediate_site_category }}
+                                            {% endif %}
+                                        </div>
+                                        {% if log.intermediate_site %}
+                                            <div class="text-xs text-gray-500 truncate max-w-xs">{{ log.intermediate_site }}</div>
+                                        {% endif %}
+                                        {% if log.error_message %}
+                                            <div class="text-xs text-gray-600 mt-1">{{ log.error_message }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {% if log.response_time %}
+                                    <div>
+                                        <div class="font-medium">{{ log.response_time|floatformat:1 }}초</div>
+                                        {% if log.intermediate_site_category == '중간사이트 체류' %}
+                                            <div class="text-xs text-gray-500">체류 시간</div>
+                                        {% elif log.intermediate_site_category == '타겟 방문 성공' %}
+                                            <div class="text-xs text-gray-500">총 소요 시간</div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {% if log.status == 'pending' %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <i class="fas fa-spinner fa-spin mr-1"></i>진행중
+                                    </span>
+                                {% elif log.status == 'success' %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check mr-1"></i>완료
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <i class="fas fa-times mr-1"></i>실패
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button onclick="showLogDetails({{ log.id }})" class="text-indigo-600 hover:text-indigo-900">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center">
+                                    <i class="fas fa-chart-line text-4xl text-gray-300 mb-4"></i>
+                                    <p class="text-lg font-medium">트래픽 로그가 없습니다</p>
+                                    <p class="text-sm">백링크 트래픽을 활성화하면 로그가 생성됩니다</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 페이징 -->
+        {% if page_obj.has_other_pages %}
+        <div class="border-t border-gray-100 px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    {{ page_obj.start_index }} - {{ page_obj.end_index }} / {{ page_obj.paginator.count }}개
+                </div>
+                
+                <div class="flex space-x-2">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if traffic_type_filter %}&traffic_type={{ traffic_type_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}" 
+                           class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if traffic_type_filter %}&traffic_type={{ traffic_type_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}" 
+                           class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    {% endif %}
+                    
+                    <span class="px-3 py-1 text-sm text-gray-700">
+                        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if traffic_type_filter %}&traffic_type={{ traffic_type_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}" 
+                           class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if traffic_type_filter %}&traffic_type={{ traffic_type_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}" 
+                           class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 로그 상세 정보 모달 -->
+<div id="logModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div class="border-b border-gray-100 p-6">
+                <h3 class="text-lg font-semibold text-gray-800">로그 상세 정보</h3>
+                <button onclick="closeLogModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="logDetails" class="p-6">
+                <!-- 로그 상세 정보가 여기에 로드됩니다 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showLogDetails(logId) {
+    // 실제 구현에서는 AJAX로 로그 상세 정보를 가져와야 합니다
+    const modal = document.getElementById('logModal');
+    const details = document.getElementById('logDetails');
+    
+    // 임시로 샘플 데이터 표시
+    details.innerHTML = `
+        <div class="space-y-4">
+            <div>
+                <h4 class="font-semibold text-gray-800 mb-2">기본 정보</h4>
+                <div class="bg-gray-50 p-3 rounded">
+                    <p><strong>로그 ID:</strong> ${logId}</p>
+                    <p><strong>생성 시간:</strong> ${new Date().toLocaleString()}</p>
+                    <p><strong>상태:</strong> 성공</p>
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="font-semibold text-gray-800 mb-2">트래픽 경로</h4>
+                <div class="bg-gray-50 p-3 rounded">
+                    <p><strong>검색 엔진:</strong> Google</p>
+                    <p><strong>중간 사이트:</strong> 블로그 포스트</p>
+                    <p><strong>타겟 URL:</strong> https://example.com</p>
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="font-semibold text-gray-800 mb-2">체류 시간</h4>
+                <div class="bg-gray-50 p-3 rounded">
+                    <p><strong>검색 페이지:</strong> 3.2초</p>
+                    <p><strong>중간 사이트:</strong> 45.8초</p>
+                    <p><strong>타겟 사이트:</strong> 120.3초</p>
+                    <p><strong>총 소요 시간:</strong> 169.3초</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeLogModal() {
+    const modal = document.getElementById('logModal');
+    modal.classList.add('hidden');
+}
+
+// 모달 외부 클릭 시 닫기
+document.getElementById('logModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeLogModal();
+    }
+});
+
+// 실시간 새로고침 기능
+let refreshInterval;
+let isAutoRefreshEnabled = false;
+
+function updateLastUpdateTime() {
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent = `마지막 업데이트: ${now.toLocaleTimeString()}`;
+}
+
+function refreshPage() {
+    updateLastUpdateTime();
+    location.reload();
+}
+
+function startAutoRefresh() {
+    const interval = parseInt(document.getElementById('refreshInterval').value) * 1000;
+    refreshInterval = setInterval(refreshPage, interval);
+    isAutoRefreshEnabled = true;
+    console.log(`자동 새로고침 시작: ${interval/1000}초 간격`);
+}
+
+function stopAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+    }
+    isAutoRefreshEnabled = false;
+    console.log('자동 새로고침 중지');
+}
+
+// 자동 새로고침 체크박스 이벤트
+document.getElementById('autoRefresh').addEventListener('change', function() {
+    if (this.checked) {
+        startAutoRefresh();
+    } else {
+        stopAutoRefresh();
+    }
+});
+
+// 수동 새로고침 버튼 이벤트
+document.getElementById('manualRefresh').addEventListener('click', function() {
+    refreshPage();
+});
+
+// 새로고침 간격 변경 이벤트
+document.getElementById('refreshInterval').addEventListener('change', function() {
+    if (isAutoRefreshEnabled) {
+        stopAutoRefresh();
+        startAutoRefresh();
+    }
+});
+
+// 페이지 로드 시 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    updateLastUpdateTime();
+    
+    // 자동 새로고침이 활성화되어 있으면 시작
+    if (document.getElementById('autoRefresh').checked) {
+        startAutoRefresh();
+    }
+});
+
+// 페이지 언로드 시 인터벌 정리
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+</script>
+{% endblock %} 

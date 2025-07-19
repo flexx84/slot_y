@@ -1,0 +1,47 @@
+{
+  "name": "R슬롯 Django 개발환경",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-python.isort",
+        "ms-toolsai.jupyter",
+        "ms-vscode.vscode-json"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        }
+      }
+    }
+  },
+  
+  "postCreateCommand": "pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput",
+  
+  "forwardPorts": [8000],
+  
+  "portsAttributes": {
+    "8000": {
+      "label": "Django Development Server",
+      "onAutoForward": "notify"
+    }
+  },
+  
+  "postStartCommand": "python manage.py runserver 0.0.0.0:8000",
+  
+  "remoteUser": "vscode"
+} 

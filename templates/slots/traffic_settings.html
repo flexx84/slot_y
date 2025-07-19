@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block title %}트래픽 설정 - R슬롯{% endblock %}
+
+{% block page_title %}트래픽 설정{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100">
+        <div class="border-b border-gray-100 p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-2">
+                <i class="fas fa-cog text-indigo-500 mr-2"></i>백링크 트래픽 설정
+            </h2>
+            <p class="text-sm text-gray-600">
+                백링크 우회 트래픽 생성에 대한 세부 설정을 관리할 수 있습니다.
+            </p>
+        </div>
+        
+        <form method="POST" class="p-6">
+            {% csrf_token %}
+            
+            <!-- 기본 트래픽 설정 -->
+            <div class="mb-8">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">
+                    <i class="fas fa-play text-blue-500 mr-2"></i>기본 트래픽 설정
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label for="{{ form.basic_traffic_count.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.basic_traffic_count.label }}
+                        </label>
+                        {{ form.basic_traffic_count }}
+                        {% if form.basic_traffic_count.errors %}
+                            <div class="mt-1 text-sm text-red-600">{{ form.basic_traffic_count.errors.0 }}</div>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">기본 백링크 트래픽을 생성할 횟수</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.multi_hop_traffic_count.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.multi_hop_traffic_count.label }}
+                        </label>
+                        {{ form.multi_hop_traffic_count }}
+                        {% if form.multi_hop_traffic_count.errors %}
+                            <div class="mt-1 text-sm text-red-600">{{ form.multi_hop_traffic_count.errors.0 }}</div>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">다단계 우회 트래픽을 생성할 횟수</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.scheduled_daily_count.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.scheduled_daily_count.label }}
+                        </label>
+                        {{ form.scheduled_daily_count }}
+                        {% if form.scheduled_daily_count.errors %}
+                            <div class="mt-1 text-sm text-red-600">{{ form.scheduled_daily_count.errors.0 }}</div>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">스케줄 백링크 일일 트래픽 수</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 체류 시간 설정 -->
+            <div class="mb-8">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">
+                    <i class="fas fa-clock text-green-500 mr-2"></i>체류 시간 설정 (초)
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="text-md font-medium text-gray-700 mb-3">검색 페이지 체류 시간</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="{{ form.min_search_stay_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                    최소 시간
+                                </label>
+                                {{ form.min_search_stay_time }}
+                                {% if form.min_search_stay_time.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.min_search_stay_time.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.max_search_stay_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                    최대 시간
+                                </label>
+                                {{ form.max_search_stay_time }}
+                                {% if form.max_search_stay_time.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.max_search_stay_time.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-md font-medium text-gray-700 mb-3">중간 사이트 체류 시간</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="{{ form.min_intermediate_stay_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                    최소 시간
+                                </label>
+                                {{ form.min_intermediate_stay_time }}
+                                {% if form.min_intermediate_stay_time.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.min_intermediate_stay_time.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.max_intermediate_stay_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                    최대 시간
+                                </label>
+                                {{ form.max_intermediate_stay_time }}
+                                {% if form.max_intermediate_stay_time.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.max_intermediate_stay_time.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-md font-medium text-gray-700 mb-3">타겟 사이트 체류 시간</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="{{ form.min_target_stay_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                    최소 시간
+                                </label>
+                                {{ form.min_target_stay_time }}
+                                {% if form.min_target_stay_time.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.min_target_stay_time.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.max_target_stay_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                    최대 시간
+                                </label>
+                                {{ form.max_target_stay_time }}
+                                {% if form.max_target_stay_time.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.max_target_stay_time.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-md font-medium text-gray-700 mb-3">요청 간 지연 시간</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="{{ form.min_delay_between_requests.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                    최소 지연
+                                </label>
+                                {{ form.min_delay_between_requests }}
+                                {% if form.min_delay_between_requests.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.min_delay_between_requests.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.max_delay_between_requests.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                    최대 지연
+                                </label>
+                                {{ form.max_delay_between_requests }}
+                                {% if form.max_delay_between_requests.errors %}
+                                    <div class="mt-1 text-sm text-red-600">{{ form.max_delay_between_requests.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 고급 설정 -->
+            <div class="mb-8">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">
+                    <i class="fas fa-sliders-h text-purple-500 mr-2"></i>고급 설정
+                </h3>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        {{ form.enable_user_behavior_simulation }}
+                        <label for="{{ form.enable_user_behavior_simulation.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700">
+                            {{ form.enable_user_behavior_simulation.label }}
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        {{ form.enable_random_delays }}
+                        <label for="{{ form.enable_random_delays.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700">
+                            {{ form.enable_random_delays.label }}
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        {{ form.enable_multi_hop }}
+                        <label for="{{ form.enable_multi_hop.id_for_label }}" class="ml-3 text-sm font-medium text-gray-700">
+                            {{ form.enable_multi_hop.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 설정 저장 버튼 -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                <a href="{% url 'slot_list' %}" class="text-indigo-600 hover:text-indigo-800">
+                    <i class="fas fa-arrow-left mr-1"></i>슬롯 목록으로 돌아가기
+                </a>
+                
+                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                    <i class="fas fa-save mr-1"></i>설정 저장
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- 설정 가이드 -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">설정 가이드</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <ul class="list-disc list-inside space-y-1">
+                        <li><strong>체류 시간:</strong> 너무 짧으면 봇으로 탐지될 수 있고, 너무 길면 비효율적입니다.</li>
+                        <li><strong>지연 시간:</strong> 요청 간 자연스러운 간격을 두어 봇 탐지를 피합니다.</li>
+                        <li><strong>사용자 행동 시뮬레이션:</strong> 실제 사용자처럼 스크롤, 클릭 등을 시뮬레이션합니다.</li>
+                        <li><strong>다단계 우회:</strong> 여러 중간 사이트를 거쳐 더욱 자연스러운 트래픽을 생성합니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

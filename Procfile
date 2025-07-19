@@ -1,0 +1,1 @@
+web: gunicorn rslot.wsgi --log-file - 

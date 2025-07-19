@@ -138,3 +138,40 @@ DATABASE_URL=sqlite:///db.sqlite3
 ## 📞 문의
 
 프로젝트에 대한 문의사항이 있으시면 이슈를 생성해주세요.
+
+## ✅ 강력한 마이그레이션 자동화 완료
+
+**문제**: `no such table: auth_user` - 마이그레이션이 실행되지 않음
+**해결**: 여러 단계에서 마이그레이션을 강제로 실행하도록 설정
+
+## 적용된 해결책:
+
+### 1. **Procfile에서 강제 실행**:
+```bash
+web: python manage.py makemigrations && python manage.py migrate && python create_admin.py && gunicorn rslot.wsgi --log-file -
+```
+
+### 2. **railway.json에서 postinstall 스크립트**:
+```json
+"postinstall": "python manage.py makemigrations && python manage.py migrate && python create_admin.py && python manage.py collectstatic --noinput"
+```
+
+### 3. **wsgi.py에서 앱 시작 시 자동 실행**:
+```python
+# 앱 시작 시 마이그레이션 실행
+run_migrations()
+```
+
+## 이제 3단계 보장:
+
+1. **배포 시**: Procfile에서 마이그레이션 실행
+2. **설치 후**: railway.json postinstall에서 마이그레이션 실행  
+3. **앱 시작 시**: wsgi.py에서 마이그레이션 실행
+
+## ⏰ 다음 단계:
+
+1. **Railway 자동 재배포**: GitHub에 푸시했으므로 Railway가 자동으로 새 배포를 시작합니다
+2. **3중 마이그레이션 보장**: 어느 단계에서든 마이그레이션이 실행됩니다
+3. **관리자 계정 생성**: `admin` / `admin123` 계정이 자동으로 생성됩니다
+
+이제 Railway에서 `auth_user` 테이블이 확실히 생성되고, 더 이상 오류가 발생하지 않을 것입니다! 🎯

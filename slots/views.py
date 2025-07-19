@@ -9,6 +9,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.db import models
 from django.core.paginator import Paginator
 from django.contrib.auth.hashers import check_password
+from datetime import timedelta
 from .models import Slot, Notice, TrafficLog, TrafficSettings
 from .forms import SlotForm, NoticeForm, TrafficSettingsForm, AdminPasswordForm
 from .traffic_generator import TrafficManager
@@ -67,6 +68,8 @@ def slot_create(request):
         if form.is_valid():
             slot = form.save(commit=False)
             slot.user = request.user
+            # end_date를 30일 후로 설정
+            slot.end_date = slot.start_date + timedelta(days=30)
             slot.save()
             messages.success(request, '슬롯이 성공적으로 생성되었습니다.')
             return redirect('slot_list')

@@ -172,7 +172,7 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% if page_obj %}
                         {% for log in page_obj %}
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50 log-row" data-log-id="{{ log.id }}">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ log.created_at|date:"Y-m-d H:i:s" }}
                             </td>
@@ -251,9 +251,14 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {% if log.status == 'pending' %}
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        <i class="fas fa-spinner fa-spin mr-1"></i>진행중
-                                    </span>
+                                    <div class="flex flex-col space-y-1">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <i class="fas fa-spinner fa-spin mr-1"></i>진행중
+                                        </span>
+                                        <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                            <div class="bg-blue-600 h-1.5 rounded-full animate-pulse" style="width: 60%"></div>
+                                        </div>
+                                    </div>
                                 {% elif log.status == 'success' %}
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <i class="fas fa-check mr-1"></i>완료
@@ -401,10 +406,104 @@ document.getElementById('logModal').addEventListener('click', function(e) {
 // 실시간 새로고침 기능
 let refreshInterval;
 let isAutoRefreshEnabled = false;
+let lastLogCount = 0;
 
 function updateLastUpdateTime() {
     const now = new Date();
     document.getElementById('lastUpdate').textContent = `마지막 업데이트: ${now.toLocaleTimeString()}`;
+}
+
+// AJAX를 사용한 실시간 업데이트 (페이지 새로고침 없이)
+async function refreshLogs() {
+    try {
+        const response = await fetch(window.location.href);
+        const html = await response.text();
+        
+        // 새로운 HTML에서 테이블 내용만 추출
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newTable = doc.querySelector('tbody');
+        const currentTable = document.querySelector('tbody');
+        
+        if (newTable && currentTable) {
+            // 새로운 로그가 있는지 확인
+            const newLogCount = newTable.children.length;
+            if (newLogCount > lastLogCount) {
+                // 새로운 로그가 있으면 알림 표시
+                showNotification(`${newLogCount - lastLogCount}개의 새로운 로그가 추가되었습니다!`);
+            }
+            
+            // 테이블 내용 업데이트
+            const oldRows = currentTable.querySelectorAll('.log-row');
+            const newRows = newTable.querySelectorAll('.log-row');
+            
+            // 새로운 로그가 있는지 확인하고 하이라이트 효과 추가
+            if (newRows.length > oldRows.length) {
+                // 새로운 행들에 하이라이트 효과 추가
+                for (let i = oldRows.length; i < newRows.length; i++) {
+                    const newRow = newRows[i];
+                    newRow.classList.add('bg-green-50', 'border-l-4', 'border-green-400');
+                    
+                    // 3초 후 하이라이트 제거
+                    setTimeout(() => {
+                        newRow.classList.remove('bg-green-50', 'border-l-4', 'border-green-400');
+                    }, 3000);
+                }
+            }
+            
+            currentTable.innerHTML = newTable.innerHTML;
+            lastLogCount = newLogCount;
+        }
+        
+        // 통계 카드 업데이트
+        updateStatistics(doc);
+        
+        updateLastUpdateTime();
+    } catch (error) {
+        console.error('로그 업데이트 실패:', error);
+        // 실패 시 전체 페이지 새로고침
+        location.reload();
+    }
+}
+
+function updateStatistics(doc) {
+    // 통계 카드 업데이트
+    const totalLogs = doc.querySelector('.text-blue-900');
+    const successLogs = doc.querySelector('.text-green-900');
+    const failedLogs = doc.querySelector('.text-red-900');
+    const pendingLogs = doc.querySelector('.text-yellow-900');
+    
+    if (totalLogs) document.querySelector('.text-blue-900').textContent = totalLogs.textContent;
+    if (successLogs) document.querySelector('.text-green-900').textContent = successLogs.textContent;
+    if (failedLogs) document.querySelector('.text-red-900').textContent = failedLogs.textContent;
+    if (pendingLogs) document.querySelector('.text-yellow-900').textContent = pendingLogs.textContent;
+}
+
+function showNotification(message) {
+    // 알림 표시
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-x-full';
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-bell mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // 애니메이션 효과
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // 3초 후 자동 제거
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
 }
 
 function refreshPage() {
@@ -414,7 +513,7 @@ function refreshPage() {
 
 function startAutoRefresh() {
     const interval = parseInt(document.getElementById('refreshInterval').value) * 1000;
-    refreshInterval = setInterval(refreshPage, interval);
+    refreshInterval = setInterval(refreshLogs, interval);
     isAutoRefreshEnabled = true;
     console.log(`자동 새로고침 시작: ${interval/1000}초 간격`);
 }
